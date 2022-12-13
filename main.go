@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"math"
 	"net/http"
 	"os"
 
@@ -14,19 +15,41 @@ import (
 func main() {
 	godotenv.Load()
 
-	currentSong := loadSong()
-	fmt.Printf("%+v\n", currentSong)
-
-	if term.IsTerminal(0) {
-		println("in a term")
-	} else {
+	if !term.IsTerminal(0) {
 		println("not in a term")
 	}
+
 	width, height, err := term.GetSize(0)
 	if err != nil {
 		return
 	}
-	println("width:", width, "height:", height)
+
+	// usedLines := 0
+
+	currentSong := loadSong()
+
+	fmt.Println("Name:", currentSong.Name)
+	fmt.Println("Album:", currentSong.AlbumName)
+	fmt.Println("Artist:", currentSong.ArtistName)
+	fmt.Println("")
+	height -= 5
+
+	if currentSong.IsPlaying {
+		fmt.Println("|> (Playing) --", fmt.Sprint(currentSong.ProgressMs/1000)+"/"+fmt.Sprint(currentSong.DurationMs/1000))
+	} else {
+		fmt.Println("|| (paused)")
+	}
+	height--
+
+	listenedChars := math.Round(float64(width) / 100.0 * float64(100.0/float64(currentSong.DurationMs)) * float64(currentSong.ProgressMs))
+	for i := 0; i < int(listenedChars); i++ {
+		fmt.Print("+")
+	}
+	for i := 0; i < width-int(listenedChars); i++ {
+		fmt.Print("-")
+	}
+	height--
+	fmt.Println("")
 	// for true {
 	// 	fmt.Println("hallo")
 	// }
@@ -48,6 +71,7 @@ func loadSong() currentTrack {
 	// fmt.Printf("%+v\n", d.Item.Artists)
 	// data := currentTrack{ProgressMs: d.ProgressMs, IsPlaying: d.IsPlaying, AlbumName: d.Item.Album.Name, DurationMs: d.Item.DurationMs, Href: d.Item.Href, Name: d.Item.Name}
 	data := currentTrack{ProgressMs: d.ProgressMs, IsPlaying: d.IsPlaying, AlbumName: d.Item.Album.Name, ArtistName: d.Item.Artists[0].Name, DurationMs: d.Item.DurationMs, Href: d.Item.Href, Name: d.Item.Name}
+	// fmt.Printf("%+v\n", data)
 	return data
 	// return currentTrack{}
 }
