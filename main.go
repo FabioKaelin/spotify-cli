@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math"
 	"net/http"
 	"os"
@@ -37,7 +36,7 @@ func saveToken() {
 
 	file, _ := json.MarshalIndent(Token, "", "    ")
 
-	_ = ioutil.WriteFile("tokens.json", file, 0644)
+	_ = os.WriteFile("tokens.json", file, 0644)
 }
 
 func main() {
