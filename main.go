@@ -71,41 +71,49 @@ func main() {
 
 	name.Start()
 
+	failCount := 0
+
 	for {
 
 		currentSong, err := loadSong(Token.UserReadCurrentlyPlaying)
 		if err != nil {
+			failCount++
+		} else {
+			failCount = 0
+
+			fmt.Fprintf(name, "Name: %s\n", magenta(currentSong.Name))
+			fmt.Fprintf(album, "Album: %s\n", magenta(currentSong.AlbumName))
+			fmt.Fprintf(artist, "Artist: %s\n", magenta(currentSong.ArtistName))
+
+			fmt.Fprintf(emptyLine, "\n")
+			if currentSong.IsPlaying {
+
+				fmt.Fprintf(playStatus, "%s -- %d.%02d/%d.%02d\n", green("|> (Playing)"), (currentSong.ProgressMs/1000)/60, (currentSong.ProgressMs/1000)%60, (currentSong.DurationMs/1000)/60, (currentSong.DurationMs/1000)%60)
+			} else {
+				fmt.Fprintf(playStatus, "%s -- %d.%02d/%d.%02d\n", red("|| (paused)"), (currentSong.ProgressMs/1000)/60, (currentSong.ProgressMs/1000)%60, (currentSong.DurationMs/1000)/60, (currentSong.DurationMs/1000)%60)
+			}
+
+			listenedChars := math.Round(float64(width) / 100.0 * float64(100.0/float64(currentSong.DurationMs)) * float64(currentSong.ProgressMs))
+			plus := ""
+			for i := 0; i < int(listenedChars); i++ {
+				plus = plus + "+"
+			}
+			minus := ""
+			for i := 0; i < width-int(listenedChars); i++ {
+				minus = minus + "-"
+			}
+			fmt.Fprintf(playProgress, "%s%s\n", green(plus), yellow(minus))
+
+			// for i := 0; i < leftHeight; i++ {
+			// 	fmt.Println("")
+			// }
+			time.Sleep(500 * time.Millisecond)
+		}
+
+		if failCount > 3 {
 			fmt.Println(err)
 			return
 		}
-
-		fmt.Fprintf(name, "Name: %s\n", magenta(currentSong.Name))
-		fmt.Fprintf(album, "Album: %s\n", magenta(currentSong.AlbumName))
-		fmt.Fprintf(artist, "Artist: %s\n", magenta(currentSong.ArtistName))
-
-		fmt.Fprintf(emptyLine, "\n")
-		if currentSong.IsPlaying {
-
-			fmt.Fprintf(playStatus, "%s -- %d.%02d/%d.%02d\n", green("|> (Playing)"), (currentSong.ProgressMs/1000)/60, (currentSong.ProgressMs/1000)%60, (currentSong.DurationMs/1000)/60, (currentSong.DurationMs/1000)%60)
-		} else {
-			fmt.Fprintf(playStatus, "%s -- %d.%02d/%d.%02d\n", red("|| (paused)"), (currentSong.ProgressMs/1000)/60, (currentSong.ProgressMs/1000)%60, (currentSong.DurationMs/1000)/60, (currentSong.DurationMs/1000)%60)
-		}
-
-		listenedChars := math.Round(float64(width) / 100.0 * float64(100.0/float64(currentSong.DurationMs)) * float64(currentSong.ProgressMs))
-		plus := ""
-		for i := 0; i < int(listenedChars); i++ {
-			plus = plus + "+"
-		}
-		minus := ""
-		for i := 0; i < width-int(listenedChars); i++ {
-			minus = minus + "-"
-		}
-		fmt.Fprintf(playProgress, "%s%s\n", green(plus), yellow(minus))
-
-		// for i := 0; i < leftHeight; i++ {
-		// 	fmt.Println("")
-		// }
-		time.Sleep(500 * time.Millisecond)
 	}
 	// name.Stop()
 }
