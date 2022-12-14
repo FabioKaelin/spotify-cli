@@ -2,8 +2,9 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"math"
 	"net/http"
 	"os"
@@ -26,7 +27,12 @@ func main() {
 
 	// usedLines := 0
 
-	currentSong := loadSong()
+	currentSong, err := loadSong()
+	if err != nil {
+		fmt.Println(err)
+		return
+
+	}
 
 	fmt.Println("Name:", currentSong.Name)
 	fmt.Println("Album:", currentSong.AlbumName)
@@ -50,29 +56,30 @@ func main() {
 	}
 	height--
 	fmt.Println("")
-	// for true {
-	// 	fmt.Println("hallo")
-	// }
 }
 
-func loadSong() currentTrack {
+// func loadSong() currentTrack {
+func loadSong() (currentTrack, error) {
 	url := "https://api.spotify.com/v1/me/player/currently-playing"
-	// header = { "Authorization" : "Bearer " + config.get("TOKEN_user_read_recently_played") }
-	// r = requests.get(url, headers=header)
 	client := &http.Client{}
 	req, _ := http.NewRequest("GET", url, nil)
 	req.Header.Set("Authorization", "Bearer "+os.Getenv("TOKEN_user_read_recently_played"))
 	res, _ := client.Do(req)
+	body, _ := io.ReadAll(res.Body)
 	// var d any
+
 	var d currentTrackAPI
-	body, _ := ioutil.ReadAll(res.Body)
 	json.Unmarshal([]byte(body), &d)
 	// fmt.Printf("%+v\n", d)
-	// fmt.Printf("%+v\n", d.Item.Artists)
-	// data := currentTrack{ProgressMs: d.ProgressMs, IsPlaying: d.IsPlaying, AlbumName: d.Item.Album.Name, DurationMs: d.Item.DurationMs, Href: d.Item.Href, Name: d.Item.Name}
+	if (d.Error != errorMsg{}) {
+		return currentTrack{}, errors.New(d.Error.Message)
+	}
+	if d.Item.Name == "" {
+		return currentTrack{}, errors.New("no retrun")
+	}
+
 	data := currentTrack{ProgressMs: d.ProgressMs, IsPlaying: d.IsPlaying, AlbumName: d.Item.Album.Name, ArtistName: d.Item.Artists[0].Name, DurationMs: d.Item.DurationMs, Href: d.Item.Href, Name: d.Item.Name}
-	// fmt.Printf("%+v\n", data)
-	return data
+	return data, nil
 	// return currentTrack{}
 }
 
@@ -88,6 +95,12 @@ type currentTrackAPI struct {
 		Href       string       `json:"href"`
 		Name       string       `json:"name"`
 	} `json:"item"`
+	Error errorMsg `json:"error"`
+}
+
+type errorMsg struct {
+	Message string `json:"message"`
+	Status  int    `json:"status"`
 }
 
 type artistsAPI struct {
