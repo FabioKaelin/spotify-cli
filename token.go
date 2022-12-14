@@ -21,7 +21,7 @@ type AuthResponse struct {
 	AccessToken string `json:"access_token"`
 }
 
-func fetchUserToken() string {
+func fetchUserToken(scope string) string {
 	godotenv.Load()
 	const (
 		redirectURL     = "http://localhost:4321"
@@ -43,7 +43,8 @@ func fetchUserToken() string {
 	// local state parameter for cross-site request forgery prevention
 	state := fmt.Sprint(rand.Int())
 	// scope of the access: we want to modify user's playlists
-	scope := "user-read-currently-playing"
+	// scope := "user-read-currently-playing"
+
 	// scope := "playlist-modify-private"
 	// loginURL
 	path := fmt.Sprintf(spotifyLoginURL, clientID, redirectURL, scope, state)

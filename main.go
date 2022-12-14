@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"math"
 	"net/http"
 	"os"
@@ -16,11 +17,32 @@ import (
 	"golang.org/x/term"
 )
 
-var Token string
+var Token TokenList
+
+func loadJson() {
+	tokenFile, err := os.Open("tokens.json")
+	if err != nil {
+		fmt.Println(err)
+		panic(err)
+	}
+	// fmt.Println("Successfully Opened users.json")
+	defer tokenFile.Close()
+
+	byteValue, _ := io.ReadAll(tokenFile)
+
+	json.Unmarshal(byteValue, &Token)
+}
+
+func saveToken() {
+
+	file, _ := json.MarshalIndent(Token, "", "    ")
+
+	_ = ioutil.WriteFile("tokens.json", file, 0644)
+}
 
 func main() {
 	godotenv.Load()
-	Token = os.Getenv("TOKEN_user_read_recently_played")
+	loadJson()
 
 	red := color.New(color.FgRed).SprintFunc()
 	green := color.New(color.FgGreen).SprintFunc()
@@ -52,7 +74,7 @@ func main() {
 
 	for {
 
-		currentSong, err := loadSong(Token)
+		currentSong, err := loadSong(Token.UserReadCurrentlyPlaying)
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -90,13 +112,10 @@ func main() {
 }
 
 func loadSong(token1 string) (currentTrack, error) {
-	// url1 := "https://api.spotify.com/v1/me/following?type=artist"
-	// url1 := "https://api.spotify.com/v1/me"
 	url1 := "https://api.spotify.com/v1/me/player/currently-playing"
 	client := &http.Client{}
 	req, _ := http.NewRequest("GET", url1, nil)
 	req.Header.Set("Authorization", "Bearer "+token1)
-	// req.Header.Set("Authorization", "Bearer "+os.Getenv("TOKEN_user_read_recently_played"))
 	res, _ := client.Do(req)
 	body, _ := io.ReadAll(res.Body)
 	// var d any
@@ -104,19 +123,18 @@ func loadSong(token1 string) (currentTrack, error) {
 	var d currentTrackAPI
 	json.Unmarshal([]byte(body), &d)
 	// fmt.Printf("%+v\n", d)
+
+	// return currentTrack{}, errors.New("a")
+
 	if d.Error.Status == 401 {
-		// err := getNewToken()
-		token1 := fetchUserToken()
-		// if err != nil {
-		// 	return currentTrack{}, err
-		// }
-		Token = token1
-		fmt.Println(d.Error.Message)
-		// return currentTrack{}, errors.New(d.Error.Message)
-		return loadSong(token1)
+		token1 := fetchUserToken("user-read-currently-playing")
+		Token.UserReadCurrentlyPlaying = token1
+		saveToken()
+		// fmt.Println(Token)
+		// fmt.Println(d.Error.Message)
+		return loadSong(Token.UserReadCurrentlyPlaying)
 	}
 	if (d.Error != errorMsg{}) {
-		// fmt.Println(d.Error.Status)
 		return currentTrack{}, errors.New(d.Error.Message)
 	}
 	if d.Item.Name == "" {
@@ -125,13 +143,11 @@ func loadSong(token1 string) (currentTrack, error) {
 
 	data := currentTrack{ProgressMs: d.ProgressMs, IsPlaying: d.IsPlaying, AlbumName: d.Item.Album.Name, ArtistName: d.Item.Artists[0].Name, DurationMs: d.Item.DurationMs, Href: d.Item.Href, Name: d.Item.Name}
 	return data, nil
-	// return currentTrack{}
 }
 
-// type tokenResponseAPI struct {
-// 	AccessToken string `json:"access_token"`
-// 	Error       string `json:"error"`
-// }
+type TokenList struct {
+	UserReadCurrentlyPlaying string `json:"user-read-currently-playing"`
+}
 
 type currentTrackAPI struct {
 	ProgressMs int  `json:"progress_ms"`
