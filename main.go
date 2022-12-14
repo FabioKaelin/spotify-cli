@@ -1,16 +1,13 @@
 package main
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"math"
 	"net/http"
-	"net/url"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/fatih/color"
@@ -48,33 +45,24 @@ func main() {
 	album := name.Newline()
 	artist := name.Newline()
 	emptyLine := name.Newline()
-	fmt.Fprint(emptyLine, "")
 	playStatus := name.Newline()
 	playProgress := name.Newline()
 
 	name.Start()
 
-	// for i := 0; i <= 100; i++ {
-	// 	fmt.Fprintf(name, "Downloading File 1.. %d %%\n", i)
-	// 	fmt.Fprintf(album, "Downloading File 2.. %d %%\n", i)
-	// 	fmt.Fprintf(artist, "Downloading File 3.. %d %%\n", i)
-	// 	time.Sleep(time.Millisecond * 5)
-	// }
-
-	// return
-
 	for {
 
-		currentSong, err := loadSong()
+		currentSong, err := loadSong(Token)
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
 
-		fmt.Fprintf(name, "Name: %s", magenta(currentSong.Name))
-		fmt.Fprintf(album, "Album: %s", magenta(currentSong.AlbumName))
-		fmt.Fprintf(artist, "Artist: %s", magenta(currentSong.ArtistName))
+		fmt.Fprintf(name, "Name: %s\n", magenta(currentSong.Name))
+		fmt.Fprintf(album, "Album: %s\n", magenta(currentSong.AlbumName))
+		fmt.Fprintf(artist, "Artist: %s\n", magenta(currentSong.ArtistName))
 
+		fmt.Fprintf(emptyLine, "\n")
 		if currentSong.IsPlaying {
 
 			fmt.Fprintf(playStatus, "%s -- %d.%02d/%d.%02d\n", green("|> (Playing)"), (currentSong.ProgressMs/1000)/60, (currentSong.ProgressMs/1000)%60, (currentSong.DurationMs/1000)/60, (currentSong.DurationMs/1000)%60)
@@ -91,7 +79,7 @@ func main() {
 		for i := 0; i < width-int(listenedChars); i++ {
 			minus = minus + "-"
 		}
-		fmt.Fprintf(playProgress, "%s%s", green(plus), yellow(minus))
+		fmt.Fprintf(playProgress, "%s%s\n", green(plus), yellow(minus))
 
 		// for i := 0; i < leftHeight; i++ {
 		// 	fmt.Println("")
@@ -101,43 +89,13 @@ func main() {
 	// name.Stop()
 }
 
-func getNewToken() error {
-
-	data := url.Values{}
-	data.Set("grant_type", "client_credentials")
-	encodedData := data.Encode()
-
-	url1 := "https://accounts.spotify.com/api/token"
-	client := &http.Client{}
-	req, _ := http.NewRequest("POST", url1, strings.NewReader(encodedData))
-
-	clientId := os.Getenv("CLIENT_ID")
-	clientSecret := os.Getenv("CLIENT_SECRET")
-	str := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", clientId, clientSecret)))
-
-	req.Header.Set("Authorization", "Basic "+str)
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	res, _ := client.Do(req)
-	body, _ := io.ReadAll(res.Body)
-	var d tokenResponseAPI
-	json.Unmarshal([]byte(body), &d)
-	if d.Error != "" {
-		return errors.New(d.Error)
-	}
-
-	Token = d.AccessToken
-
-	return nil
-}
-
-// func loadSong() currentTrack {
-func loadSong() (currentTrack, error) {
+func loadSong(token1 string) (currentTrack, error) {
 	// url1 := "https://api.spotify.com/v1/me/following?type=artist"
-	url1 := "https://api.spotify.com/v1/me"
-	// url1 := "https://api.spotify.com/v1/me/player/currently-playing"
+	// url1 := "https://api.spotify.com/v1/me"
+	url1 := "https://api.spotify.com/v1/me/player/currently-playing"
 	client := &http.Client{}
 	req, _ := http.NewRequest("GET", url1, nil)
-	req.Header.Set("Authorization", "Bearer "+Token)
+	req.Header.Set("Authorization", "Bearer "+token1)
 	// req.Header.Set("Authorization", "Bearer "+os.Getenv("TOKEN_user_read_recently_played"))
 	res, _ := client.Do(req)
 	body, _ := io.ReadAll(res.Body)
@@ -147,12 +105,15 @@ func loadSong() (currentTrack, error) {
 	json.Unmarshal([]byte(body), &d)
 	// fmt.Printf("%+v\n", d)
 	if d.Error.Status == 401 {
-		err := getNewToken()
-		if err != nil {
-			return currentTrack{}, err
-		}
+		// err := getNewToken()
+		token1 := fetchUserToken()
+		// if err != nil {
+		// 	return currentTrack{}, err
+		// }
+		Token = token1
 		fmt.Println(d.Error.Message)
-		return loadSong()
+		// return currentTrack{}, errors.New(d.Error.Message)
+		return loadSong(token1)
 	}
 	if (d.Error != errorMsg{}) {
 		// fmt.Println(d.Error.Status)
@@ -167,10 +128,10 @@ func loadSong() (currentTrack, error) {
 	// return currentTrack{}
 }
 
-type tokenResponseAPI struct {
-	AccessToken string `json:"access_token"`
-	Error       string `json:"error"`
-}
+// type tokenResponseAPI struct {
+// 	AccessToken string `json:"access_token"`
+// 	Error       string `json:"error"`
+// }
 
 type currentTrackAPI struct {
 	ProgressMs int  `json:"progress_ms"`

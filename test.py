@@ -1,3 +1,4 @@
+import json
 import requests
 from dotenv import dotenv_values
 import base64
@@ -49,12 +50,21 @@ config = dotenv_values(".env")  # config = {"USER": "foo", "EMAIL": "foo@example
 
 the_data = str({"grant_type": 'client_credentials'})
 the_data = {"grant_type": 'client_credentials'}
-headers = {'Content-Type': 'application/x-www-form-urlencoded','Authorization': 'Basic ' + (base64.b64encode((config.get("CLIENT_ID")+":"+config.get("CLIENT_SECRET")).encode("utf-8"))).decode("utf-8") }
+headers = {
+    'Content-Type': 'application/x-www-form-urlencoded',
+    'Authorization': 'Basic ' + (base64.b64encode((config.get("CLIENT_ID")+":"+config.get("CLIENT_SECRET")).encode("utf-8"))).decode("utf-8") ,
+    'scope': 'user-modify-playback-state user-read-playback-state user-read-currently-playing user-read-recently-played'
+    }
 
 # requests.post("http://bla.bla.example.com", data=the_data, headers=headers)
 r = requests.post("https://accounts.spotify.com/api/token", data=the_data, headers=headers)
-print(r.status_code)
+# print(r.status_code)
 # print(r.headers)
+# print(json.dumps(base64.b64encode(r.content).decode('utf-8'))[1:-1])
+# print(json.dumps(base64.b64encode(r.content).decode('ascii'))+"'")
+
+r = requests.get("https://api.spotify.com/v1/me/player", headers={"Authorization": "Bearer " + json.loads(r.content.decode('utf-8'))["access_token"]})
+# r = requests.get("https://api.spotify.com/v1/me/player/currently-playing", headers={"Authorization": "Bearer " + json.loads(r.content.decode('utf-8'))["access_token"]})
 print(r.content)
 # request.post(authOptions, function(error, response, body) {
 #   if (!error && response.statusCode === 200) {
