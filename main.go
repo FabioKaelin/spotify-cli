@@ -42,6 +42,9 @@ func saveToken() {
 func main() {
 	godotenv.Load()
 	loadJson()
+	token1 := fetchUserToken("user-read-playback-state")
+	Token.UserReadPlaybackState = token1
+	saveToken()
 
 	red := color.New(color.FgRed).SprintFunc()
 	green := color.New(color.FgGreen).SprintFunc()
@@ -154,6 +157,8 @@ func loadSong(token1 string) (currentTrack, error) {
 
 type TokenList struct {
 	UserReadCurrentlyPlaying string `json:"user-read-currently-playing"`
+	UserReadPlaybackState    string `json:"user-read-playback-state"`
+	UserModifyPlaybackState  string `json:"user-modify-playback-state"`
 }
 
 type currentTrackAPI struct {
