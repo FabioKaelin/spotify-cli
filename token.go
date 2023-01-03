@@ -53,6 +53,7 @@ func fetchUserToken(scope string) string {
 	messages := make(chan bool)
 
 	// callback handler, redirect from authentication is handled here
+	// fmt.Println("http / registerd")
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		// check that the state parameter matches
 		if s, ok := r.URL.Query()["state"]; ok && s[0] == state {

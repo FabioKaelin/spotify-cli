@@ -12,7 +12,6 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/gosuri/uilive"
-	"github.com/joho/godotenv"
 	"golang.org/x/term"
 )
 
@@ -28,21 +27,28 @@ func loadJson() {
 	defer tokenFile.Close()
 
 	byteValue, _ := io.ReadAll(tokenFile)
-
+	// fmt.Println("error", err)
 	json.Unmarshal(byteValue, &Token)
+	// spew.Dump(byteValue)
 }
 
 func saveToken() {
 
 	file, _ := json.MarshalIndent(Token, "", "    ")
-
+	// fmt.Println(Token)
+	// fmt.Println("\n\n\n\n\n")
+	// err := os.WriteFile("tokens.json", file, 0644)
 	_ = os.WriteFile("tokens.json", file, 0644)
+	// fmt.Println(err)
+	// fmt.Println("\n\n\n\n\n")
+	// fmt.Println("\n\n\n\n\n")
 }
 
 func main() {
-	godotenv.Load()
+	// godotenv.Load()
 	loadJson()
 	token1 := fetchUserToken("user-read-playback-state")
+	// fmt.Println(token1)
 	Token.UserReadPlaybackState = token1
 	saveToken()
 
@@ -137,11 +143,13 @@ func loadSong(token1 string) (currentTrack, error) {
 	// return currentTrack{}, errors.New("a")
 
 	if d.Error.Status == 401 {
+		// fmt.Println("get new token")
+		time.Sleep(time.Millisecond * 1000)
 		token1 := fetchUserToken("user-read-currently-playing")
 		Token.UserReadCurrentlyPlaying = token1
 		saveToken()
 		// fmt.Println(Token)
-		// fmt.Println(d.Error.Message)
+		fmt.Println(d.Error.Message)
 		return loadSong(Token.UserReadCurrentlyPlaying)
 	}
 	if (d.Error != errorMsg{}) {

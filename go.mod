@@ -14,6 +14,7 @@ require (
 )
 
 require (
+	github.com/davecgh/go-spew v1.1.1
 	github.com/fatih/color v1.13.0
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8
 	golang.org/x/sys v0.3.0 // indirect

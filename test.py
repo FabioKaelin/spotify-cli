@@ -21,6 +21,7 @@ header = { "Authorization" : "Bearer " + token2 }
 r = requests.get(url)
 r = requests.get(url, headers=header)
 data = r.json()
+# print(data)
 with open("b.json", "w") as f:
     f.write( json.dumps(data, indent=4))
 
