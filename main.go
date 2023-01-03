@@ -47,9 +47,9 @@ func saveToken() {
 func main() {
 	// godotenv.Load()
 	loadJson()
-	token1 := fetchUserToken("user-read-playback-state")
+	token1 := fetchUserToken("user-read-currently-playing")
 	// fmt.Println(token1)
-	Token.UserReadPlaybackState = token1
+	Token.UserReadCurrentlyPlaying = token1
 	saveToken()
 
 	red := color.New(color.FgRed).SprintFunc()
@@ -131,7 +131,7 @@ func loadSong(token1 string) (currentTrack, error) {
 	url1 := "https://api.spotify.com/v1/me/player/currently-playing"
 	client := &http.Client{}
 	req, _ := http.NewRequest("GET", url1, nil)
-	req.Header.Set("Authorization", "Bearer "+token1)
+	req.Header.Set("Authorization", "Bearer "+Token.UserReadCurrentlyPlaying)
 	res, _ := client.Do(req)
 	body, _ := io.ReadAll(res.Body)
 	// var d any
@@ -143,13 +143,17 @@ func loadSong(token1 string) (currentTrack, error) {
 	// return currentTrack{}, errors.New("a")
 
 	if d.Error.Status == 401 {
-		// fmt.Println("get new token")
+		fmt.Println("get new token")
+		fmt.Println(d.Error.Message)
 		time.Sleep(time.Millisecond * 1000)
+		fmt.Println(Token)
+		panic("panic")
 		token1 := fetchUserToken("user-read-currently-playing")
 		Token.UserReadCurrentlyPlaying = token1
+		fmt.Println(Token)
 		saveToken()
+		loadJson()
 		// fmt.Println(Token)
-		fmt.Println(d.Error.Message)
 		return loadSong(Token.UserReadCurrentlyPlaying)
 	}
 	if (d.Error != errorMsg{}) {
